@@ -1,0 +1,80 @@
+#!/bin/bash
+#	============================================================================
+#	Este arquivo pertence ao Projeto do Sistema Operacional LuckyOS (LOS).
+#	----------------------------------------------------------------------------
+#	Copyright (C) 2016 - Luciano L. Goncalez
+#	----------------------------------------------------------------------------
+#	a.k.a.: Master Lucky
+#	eMail : master.lucky.br@gmail.com
+#	Home  : http://lucky-labs.blogspot.com.br
+#	============================================================================
+#	Este programa e software livre; voce pode redistribui-lo e/ou modifica-lo
+#	sob os termos da Licenca Publica Geral GNU, conforme publicada pela Free
+#	Software Foundation; na versao 2 da	Licenca.
+#
+#	Este programa e distribuido na expectativa de ser util, mas SEM QUALQUER
+#	GARANTIA; sem mesmo a garantia implicita de COMERCIALIZACAO ou de
+#	ADEQUACAO A QUALQUER PROPOSITO EM PARTICULAR. Consulte a Licenca Publica
+#	Geral GNU para obter mais detalhes.
+#
+#	Voce deve ter recebido uma copia da Licenca Publica Geral GNU junto com
+#	este programa; se nao, escreva para a Free Software Foundation, Inc., 59
+#	Temple Place, Suite 330, Boston, MA	02111-1307, USA. Ou acesse o site do
+#	GNU e obtenha sua licenca: http://www.gnu.org/
+#	============================================================================
+#	Script para verificacao de mudancas no repositorio de trabalho
+#	----------------------------------------------------------------------------
+#	Versao: 0.0
+#	Data: 04/06/2016
+#	----------------------------------------------------------------------------
+#	Executar:
+#			./checkdiff
+#	============================================================================
+
+# Escapes de cores
+cnormal="\e[m"
+cred="\e[1;31m"
+cgreen="\e[1;32m"
+cyellow="\e[1;33m"
+cblue="\e[1;34m"
+cmagenta="\e[1;35m"
+ccyan="\e[1;36m"
+cwhite="\e[1;37m"
+
+dirwork="workdir"
+dirtemp="worktemp"
+
+maindir=$(readlink -f "$0" | sed "s|/${dirtemp}/[^/]\+$||")
+
+fullwork="${maindir}/${dirwork}"
+fulltemp="${maindir}/${dirtemp}"
+
+exfile="${fulltemp}/.exclude.nfo"
+
+echo -en "\nVerficando diferencas... "
+
+IFS=$'\n'
+difflog=$(diff -qr "${fullwork}" "${fulltemp}" -X "${exfile}" 2>&1)
+differror=$?
+IFS=$STDIFS
+
+if [ $differror -ge 2 ]; then
+	# Erro
+	echo -e "[${cred}FALHA${cnormal}]\n"
+
+	echo -e "${cyellow}${difflog}${cnormal}\n"
+else
+	# Sem erro
+	echo -e "[${cgreen}OK${cnormal}]\n"
+
+	if [ $differror -eq 0 ]; then
+		# Igual
+		echo -e "${cyellow}Nao foi encontrado diferencas${cnormal}\n"
+	else
+		# Diferente
+		diffcount=$(echo "$difflog" | wc -l)
+
+		echo -e "Diferencas encontradas (${cred}${diffcount}${cnormal}):\n"
+		echo -e "${cyellow}${difflog}${cnormal}\n" | sed "s|${fullwork}|[WORK]|;s|${fulltemp}|[TEMP]|"
+	fi
+fi
